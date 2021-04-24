@@ -1,0 +1,174 @@
+#version 430
+
+uint hash(uint state) {
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
+}
+
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rgba32f, binding = 1) uniform image2D img_output;
+layout(rgba32f, binding = 2) uniform image2D particle_img;
+void main() {
+    // imageLoad(img, coords) --> vec4 representing pixel rgba
+    // imageStore(img_output, pixel_coords, pixel)
+
+    float VEL = 4.0;
+    float DIST = 10.0;
+    int HEIGHT = 720;
+    int WIDTH = 1280;
+    float MAX = 4294967295.0;
+    float STEERING = 0.7;
+    float RANDOMNESS = 1.0/100.0;
+    bool BOUNCE = true;
+    int CHECKSIZE = 1;
+
+    // Load
+    vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
+    vec4 currentPixel = imageLoad(img_output, ivec2(gl_GlobalInvocationID.xy));
+    // Draw
+    ivec2 coords = ivec2(int(round(particleData.x*WIDTH)), int(round(particleData.y*HEIGHT)));
+    vec4 colorData;
+
+    colorData = vec4(currentPixel.r + (1.0-currentPixel.r)*int(particleData.w < 0.25), currentPixel.g + (1.0-currentPixel.g)*int(particleData.w > 0.75), currentPixel.b + (1.0-currentPixel.b)*int(particleData.w > 0.25 && particleData.w < 0.75), 1.0);
+    //colorData.r += -1*(colorData.r - 1.0)*int(colorData.r > 1.0) + (-1*colorData.r)*int(colorData.r < 0);
+    //colorData.g += -1*(colorData.g - 1.0)*int(colorData.g > 1.0) + (-1*colorData.g)*int(colorData.g < 0);
+    imageStore(img_output, ivec2(coords.x, coords.y), colorData);
+
+    // Update position
+    particleData.x += VEL*cos(particleData.z*2*3.14159)/float(WIDTH);
+    particleData.y += VEL*sin(particleData.z*2*3.14159)/float(HEIGHT);
+    // Flip direction if at edge
+    if (particleData.x >= 1) {
+        if (BOUNCE) {
+            particleData.x = 0.999;
+            if (particleData.z <= 0.5) {
+                particleData.z += 2*(0.25 - particleData.z);
+            } else {
+                particleData.z -= 2*(particleData.z - 0.75);
+            }
+        } else {
+            particleData.x -= 1;
+        }
+    } else if (particleData.x <= 0) {
+        if (BOUNCE) {
+            particleData.x = 0.001;
+            if (particleData.z <= 0.5) {
+                particleData.z -= 2*(particleData.z - 0.25);
+            } else {
+                particleData.z += 2*(0.75 - particleData.z);
+            }
+        } else {
+            particleData.x += 1;
+        }
+    } 
+    if (particleData.y >= 1) {
+        if (BOUNCE) {
+            particleData.y = 0.999;
+            if (particleData.z <= 0.75 && particleData.z >= 0.25) {
+                particleData.z -= 2*(particleData.z - 0.5);
+            } else {
+                particleData.z += 2*(1.0 - particleData.z);
+            }
+        } else {
+            particleData.y -= 1;
+        }
+    } else if (particleData.y <= 0) {
+        if (BOUNCE) {
+            particleData.y = 0.001;
+            if (particleData.z <= 0.75 && particleData.z >= 0.25) {
+                particleData.z += 2*(0.5 - particleData.z);
+            } else {
+                particleData.z -= 2*(particleData.z);
+            }
+        } else {
+            particleData.y += 1;
+        }
+    }
+    // Turn towards pheremone
+    vec4 checkPixel;
+    ivec2 forwardCoords = ivec2(coords.x + round(DIST*cos(particleData.z*2*3.14159)), coords.y + round(DIST*sin(particleData.z*2*3.14159)));
+    if (!BOUNCE) {
+        forwardCoords.x = forwardCoords.x + (WIDTH)*int(forwardCoords.x < 0) - (WIDTH)*int(forwardCoords.x > WIDTH);
+        forwardCoords.y = forwardCoords.y + (HEIGHT)*int(forwardCoords.y < 0) - (HEIGHT)*int(forwardCoords.y > HEIGHT);
+    }
+    vec3 forward = vec3(0.0, 0.0, 0.0);
+    for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
+        for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
+            checkPixel = imageLoad(img_output, ivec2(forwardCoords.x + i, forwardCoords.y + j));
+            forward.r += checkPixel.r;
+            forward.g += checkPixel.g;
+            forward.b += checkPixel.b;
+        }
+    }
+
+    float leftAngle = particleData.z - 0.125;
+    leftAngle = leftAngle + 1*int(leftAngle < 0);
+    ivec2 leftCoords = ivec2(coords.x + round(DIST*cos(leftAngle*2*3.14159)), coords.y + round(DIST*sin(leftAngle*2*3.14159)));
+    if (!BOUNCE) {
+        leftCoords.x = leftCoords.x + (WIDTH)*int(leftCoords.x < 0) - (WIDTH)*int(leftCoords.x > WIDTH);
+        leftCoords.y = leftCoords.y + (HEIGHT)*int(leftCoords.y < 0) - (HEIGHT)*int(leftCoords.y > HEIGHT);
+    }
+    vec3 left = vec3(0.0, 0.0, 0.0);
+    for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
+        for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
+            checkPixel = imageLoad(img_output, ivec2(leftCoords.x + i, leftCoords.y + j));
+            left.r += checkPixel.r;
+            left.g += checkPixel.g;
+            left.b += checkPixel.b;
+        }
+    }
+
+    float rightAngle = particleData.z + 0.125;
+    rightAngle = rightAngle - 1*int(rightAngle > 1);
+    ivec2 rightCoords = ivec2(coords.x + round(DIST*cos(rightAngle*2*3.14159)), coords.y + round(DIST*sin(rightAngle*2*3.14159)));
+    if (!BOUNCE) {
+        rightCoords.x = rightCoords.x + (WIDTH)*int(rightCoords.x < 0) - (WIDTH)*int(rightCoords.x > WIDTH);
+        rightCoords.y = rightCoords.y + (HEIGHT)*int(rightCoords.y < 0) - (HEIGHT)*int(rightCoords.y > HEIGHT);
+    }
+    vec3 right = vec3(0.0, 0.0, 0.0);
+    for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
+        for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
+            checkPixel = imageLoad(img_output, ivec2(rightCoords.x + i, rightCoords.y + j));
+            right.r += checkPixel.r;
+            right.g += checkPixel.g;
+            right.b += checkPixel.b;
+        }
+    }
+
+    if (particleData.w < 0.25) {
+        if ((left.r - left.g - left.b) > (forward.r - forward.g - forward.b) && (left.r - left.g - left.b) > (right.r - right.g - right.b)) {
+            particleData.z -= 0.125*STEERING;
+        } else if ((right.r - right.g - right.b) > (forward.r - forward.g - forward.b) && (right.r - right.g - right.b) > (left.r - left.g - left.b)) {
+            particleData.z += 0.125*STEERING;
+        }
+    } else if (particleData.w > 0.75) {
+        if ((left.g - left.r - left.b) > (forward.g - forward.r - forward.b) && (left.g - left.r - left.b) > (right.g - right.r - right.b)) {
+            particleData.z -= 0.125*STEERING;
+        } else if ((right.g - right.r - right.b) > (forward.g - forward.r - forward.b) && (right.g - right.r - right.b) > (left.g - left.r - left.b)) {
+            particleData.z += 0.125*STEERING;
+        }
+    } else {
+        if ((left.b - left.r - left.g) > (forward.b - forward.r - forward.g) && (left.b - left.r - left.g) > (right.b - right.r - right.g)) {
+            particleData.z -= 0.125*STEERING;
+        } else if ((right.b - right.r - right.g) > (forward.b - forward.r - forward.g) && (right.b - right.r - right.g) > (left.b - left.r - left.g)) {
+            particleData.z += 0.125*STEERING;
+        }
+    }
+    // Add noise to direction
+    uint randHash = hash(uint(round(particleData.x*WIDTH) + round(particleData.y*HEIGHT)*WIDTH));
+    float randComponent = (randHash/MAX)*2.0 - 1.0;
+    particleData.z += randComponent*RANDOMNESS;
+    // Keep angle data between 0 and 1
+    if (particleData.z >= 1) {
+        particleData.z -= 1;
+    } else if (particleData.z < 0) {
+        particleData.z += 1;
+    }
+
+    imageStore(particle_img, ivec2(gl_GlobalInvocationID.xy), particleData);
+} 

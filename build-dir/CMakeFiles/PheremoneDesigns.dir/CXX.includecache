@@ -1,0 +1,54 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../libraries/glad/include/KHR/khrplatform.h
+stdint.h
+-
+inttypes.h
+-
+stdint.h
+-
+
+/home/sean/Desktop/C++ Programs/PheremoneDesigns/source/Image.h
+vector
+-
+iostream
+-
+fstream
+-
+
+/home/sean/Desktop/C++ Programs/PheremoneDesigns/source/glad.h
+KHR/khrplatform.h
+-
+
+/home/sean/Desktop/C++ Programs/PheremoneDesigns/source/main.cpp
+Image.h
+/home/sean/Desktop/C++ Programs/PheremoneDesigns/source/Image.h
+glad.h
+/home/sean/Desktop/C++ Programs/PheremoneDesigns/source/glad.h
+GLFW/glfw3.h
+-
+math.h
+-
+string
+-
+chrono
+-
+unistd.h
+-
+streambuf
+-
+sstream
+-
+stdio.h
+-
+opencv2/core.hpp
+-
+opencv2/videoio.hpp
+-
+
