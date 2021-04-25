@@ -10,13 +10,11 @@
 #include <streambuf>
 #include <sstream>
 #include <stdio.h>
-#include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
 
 bool INWARD = false;
 bool BOXED = false;
-unsigned short int TYPES = 2; // max = 3
-bool RECORD = false;
+unsigned short int TYPES = 3; // max = 3
+bool RECORD = true;
 
 int main() {
     srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -82,7 +80,7 @@ int main() {
         std::cout << "Couldn't init GLFW.\n";
     }
 
-    window = glfwCreateWindow(WIDTH*2, HEIGHT*2, "Hello Pheremones", NULL, NULL);
+    window = glfwCreateWindow(WIDTH, HEIGHT, "Hello Pheremones", NULL, NULL);
     if (!window) {
         std::cout << "Couldn't open window.\n";
     }
@@ -247,17 +245,14 @@ int main() {
         return -1;
     }
 
-    const std::string fileName = "output0.avi";
-    cv::VideoWriter outputVideo;
-    cv::Mat img(HEIGHT*2, WIDTH*2, CV_8UC3);
-    cv::Mat flipped(WIDTH*2, HEIGHT*2, CV_8UC3);
 
+    const char* cmd;
+    FILE* ffmpeg;
+    int* buffer = new int[WIDTH*HEIGHT];
     if (RECORD) {
-        outputVideo.open(fileName, cv::VideoWriter::fourcc('M','J','P','G'), 20.0, cv::Size(WIDTH*2, HEIGHT*2));
-        if (!outputVideo.isOpened()) {
-            std::cout << "Could not open the output video for write.";
-            return -1;
-        }
+        cmd = "ffmpeg -r 20 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+                            "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 26 -vf vflip output0.mp4";
+        ffmpeg = popen(cmd, "w");
     }
 
     unsigned short int i = 0;
@@ -281,9 +276,9 @@ int main() {
         (i == 0 ? glBindTexture(GL_TEXTURE_2D, tex_handler1) : glBindTexture(GL_TEXTURE_2D, tex_handler2));
         glBegin(GL_QUADS);
             glTexCoord2d(0,0); glVertex2i(0,0);
-            glTexCoord2d(1,0); glVertex2i(image.getWidth()*2, 0);
-            glTexCoord2d(1,1); glVertex2i(image.getWidth()*2, image.getHeight()*2);
-            glTexCoord2d(0,1); glVertex2i(0, image.getHeight()*2);
+            glTexCoord2d(1,0); glVertex2i(image.getWidth(), 0);
+            glTexCoord2d(1,1); glVertex2i(image.getWidth(), image.getHeight());
+            glTexCoord2d(0,1); glVertex2i(0, image.getHeight());
         glEnd();
         glDisable(GL_TEXTURE_2D);
 
@@ -299,14 +294,10 @@ int main() {
         glfwSwapBuffers(window);
 
         // Making Video
-        if (RECORD) {
-            glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
-            glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
-            glReadPixels(0,0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
-            
-            cv::flip(img, flipped, 0);
+        if (RECORD && i == 1) {
+            glReadPixels(0,0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
-            outputVideo.write(flipped);
+            fwrite(buffer, sizeof(int)*WIDTH*HEIGHT, 1, ffmpeg);
         }
 
         glUseProgram(blur_program);
@@ -316,7 +307,8 @@ int main() {
         f *= (int)(RECORD);
     }
     if (RECORD) {
-        outputVideo.release();
+        pclose(ffmpeg);
     }
+    delete[] buffer;
     glfwDestroyWindow(window);
 }

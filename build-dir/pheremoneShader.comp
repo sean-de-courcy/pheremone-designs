@@ -17,13 +17,13 @@ void main() {
     // imageLoad(img, coords) --> vec4 representing pixel rgba
     // imageStore(img_output, pixel_coords, pixel)
 
-    float VEL = 4.0;
-    float DIST = 10.0;
+    float VEL = 5.0;
+    float DIST = 20.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
-    float STEERING = 0.7;
-    float RANDOMNESS = 1.0/100.0;
+    float STEERING = 0.9;
+    float RANDOMNESS = 1.0/50.0;
     bool BOUNCE = true;
     int CHECKSIZE = 1;
 
