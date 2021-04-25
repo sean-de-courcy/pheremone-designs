@@ -18,14 +18,16 @@ void main() {
     // imageStore(img_output, pixel_coords, pixel)
 
     float VEL = 5.0;
-    float DIST = 20.0;
+    float DIST = 11.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
-    float STEERING = 0.9;
-    float RANDOMNESS = 1.0/50.0;
+    float STEERING = 0.7;
+    float RANDOMNESS = 1.0/100.0;
     bool BOUNCE = true;
     int CHECKSIZE = 1;
+    bool CONVERSION = true;
+    float THRESHOLD = 3.5;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
@@ -33,6 +35,24 @@ void main() {
     // Draw
     ivec2 coords = ivec2(int(round(particleData.x*WIDTH)), int(round(particleData.y*HEIGHT)));
     vec4 colorData;
+
+    if (CONVERSION) {
+        vec3 total = vec3(0.0, 0.0, 0.0);
+        for (int i = -1; i <= 1; i += 1) {
+            for (int j = -1; j <= 1; j += 1) {
+                total.r += imageLoad(img_output, ivec2(coords.x + i, coords.y + j)).r;
+                total.g += imageLoad(img_output, ivec2(coords.x + i, coords.y + j)).g;
+                total.b += imageLoad(img_output, ivec2(coords.x + i, coords.y + j)).b;
+            }
+        }
+        if (total.r > total.g + total.b + THRESHOLD) {
+            particleData.w = 0;
+        } else if (total.g > total.r + total.b + THRESHOLD) {
+            particleData.w = 1;
+        } else if (total.b > total.r + total.g + THRESHOLD) {
+            particleData.w = 0.5;
+        }
+    }
 
     colorData = vec4(currentPixel.r + (1.0-currentPixel.r)*int(particleData.w < 0.25), currentPixel.g + (1.0-currentPixel.g)*int(particleData.w > 0.75), currentPixel.b + (1.0-currentPixel.b)*int(particleData.w > 0.25 && particleData.w < 0.75), 1.0);
     //colorData.r += -1*(colorData.r - 1.0)*int(colorData.r > 1.0) + (-1*colorData.r)*int(colorData.r < 0);

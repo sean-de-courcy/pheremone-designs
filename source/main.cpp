@@ -34,6 +34,10 @@ int main() {
 
     Image particleImage(SQRT_NUMPIX, SQRT_NUMPIX);
 
+    int reds = 0;
+    int blues = 0;
+    int greens = 0;
+
     for (int x = 0; x < SQRT_NUMPIX; x++) {
         for (int y = 0; y < SQRT_NUMPIX; y++) {
             float posX, posY;
@@ -71,16 +75,22 @@ int main() {
             if (TYPES > 2) {
                 color = color/(TYPES-1);
             }
+            blues += 1*int(color > 0.25 && color < 0.75);
+            reds += 1*int(color < 0.25);
+            greens += 1*int(color > 0.75);
             particleImage.SetColor(Color(posX/WIDTH, posY/HEIGHT, angle, color), x, y);
         }
     }
+    std::cout << "Percent red: " << (reds/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
+    std::cout << "Percent green: " << (greens/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
+    std::cout << "Percent blue: " << (blues/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
 
     GLFWwindow* window;
     if(!glfwInit()) {
         std::cout << "Couldn't init GLFW.\n";
     }
 
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Hello Pheremones", NULL, NULL);
+    window = glfwCreateWindow(WIDTH*(2 - int(RECORD)), HEIGHT*(2 - int(RECORD)), "Hello Pheremones", NULL, NULL);
     if (!window) {
         std::cout << "Couldn't open window.\n";
     }
@@ -250,7 +260,7 @@ int main() {
     FILE* ffmpeg;
     int* buffer = new int[WIDTH*HEIGHT];
     if (RECORD) {
-        cmd = "ffmpeg -r 20 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+        cmd = "ffmpeg -r 10 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
                             "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 26 -vf vflip output0.mp4";
         ffmpeg = popen(cmd, "w");
     }
@@ -276,9 +286,9 @@ int main() {
         (i == 0 ? glBindTexture(GL_TEXTURE_2D, tex_handler1) : glBindTexture(GL_TEXTURE_2D, tex_handler2));
         glBegin(GL_QUADS);
             glTexCoord2d(0,0); glVertex2i(0,0);
-            glTexCoord2d(1,0); glVertex2i(image.getWidth(), 0);
-            glTexCoord2d(1,1); glVertex2i(image.getWidth(), image.getHeight());
-            glTexCoord2d(0,1); glVertex2i(0, image.getHeight());
+            glTexCoord2d(1,0); glVertex2i(image.getWidth()*(2 - int(RECORD)), 0);
+            glTexCoord2d(1,1); glVertex2i(image.getWidth()*(2 - int(RECORD)), image.getHeight()*(2 - int(RECORD)));
+            glTexCoord2d(0,1); glVertex2i(0, image.getHeight()*(2 - int(RECORD)));
         glEnd();
         glDisable(GL_TEXTURE_2D);
 
