@@ -17,17 +17,17 @@ void main() {
     // imageLoad(img, coords) --> vec4 representing pixel rgba
     // imageStore(img_output, pixel_coords, pixel)
 
-    float VEL = 5.0;
-    float DIST = 11.0;
+    float VEL = 2.0;
+    float DIST = 20.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
-    float STEERING = 0.7;
-    float RANDOMNESS = 1.0/100.0;
-    bool BOUNCE = true;
+    float STEERING = 0.8;
+    float RANDOMNESS = 1.0/75.0;
+    bool BOUNCE = false;
     int CHECKSIZE = 1;
     bool CONVERSION = true;
-    float THRESHOLD = 3.5;
+    float THRESHOLD = 2;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
@@ -36,6 +36,7 @@ void main() {
     ivec2 coords = ivec2(int(round(particleData.x*WIDTH)), int(round(particleData.y*HEIGHT)));
     vec4 colorData;
 
+    // Conversion
     if (CONVERSION) {
         vec3 total = vec3(0.0, 0.0, 0.0);
         for (int i = -1; i <= 1; i += 1) {

@@ -14,13 +14,15 @@
 bool INWARD = false;
 bool BOXED = false;
 unsigned short int TYPES = 3; // max = 3
-bool RECORD = true;
+bool RECORD = false;
+bool RUNAT20FPS = false;
+int SQRT_NUMPIX = 1000;
+int WIDTH = 1280;
+int HEIGHT = 720;
 
 int main() {
     srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-    int WIDTH = 1280;
-    int HEIGHT = 720;
 
     Image image(WIDTH, HEIGHT);
 
@@ -30,13 +32,7 @@ int main() {
         }
     }
 
-    int SQRT_NUMPIX = 1000;
-
     Image particleImage(SQRT_NUMPIX, SQRT_NUMPIX);
-
-    int reds = 0;
-    int blues = 0;
-    int greens = 0;
 
     for (int x = 0; x < SQRT_NUMPIX; x++) {
         for (int y = 0; y < SQRT_NUMPIX; y++) {
@@ -75,15 +71,9 @@ int main() {
             if (TYPES > 2) {
                 color = color/(TYPES-1);
             }
-            blues += 1*int(color > 0.25 && color < 0.75);
-            reds += 1*int(color < 0.25);
-            greens += 1*int(color > 0.75);
             particleImage.SetColor(Color(posX/WIDTH, posY/HEIGHT, angle, color), x, y);
         }
     }
-    std::cout << "Percent red: " << (reds/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
-    std::cout << "Percent green: " << (greens/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
-    std::cout << "Percent blue: " << (blues/float(SQRT_NUMPIX*SQRT_NUMPIX))*100 << std::endl;
 
     GLFWwindow* window;
     if(!glfwInit()) {
@@ -267,7 +257,10 @@ int main() {
 
     unsigned short int i = 0;
     int f = 0;
+    int blurWorkGroupSize = 2;
+    float avg_time = 0;
     while(!glfwWindowShouldClose(window)){
+        auto start = std::chrono::steady_clock::now();
         glUseProgram(pheremone_program);
         glDispatchCompute((GLuint)particleImage.getWidth(), (GLuint)particleImage.getHeight(), 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -309,16 +302,28 @@ int main() {
 
             fwrite(buffer, sizeof(int)*WIDTH*HEIGHT, 1, ffmpeg);
         }
-
         glUseProgram(blur_program);
-        glDispatchCompute((GLuint)image.getWidth(), (GLuint)image.getHeight(), 1);
+        glDispatchCompute((GLuint)image.getWidth()/blurWorkGroupSize, (GLuint)image.getHeight()/blurWorkGroupSize, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         f++;
         f *= (int)(RECORD);
+        auto end = std::chrono::steady_clock::now();
+        float diff = 50 - std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+        sleep(diff/1000*int(diff > 0 && RUNAT20FPS));
+        bool notFirst = !(avg_time < 0.1);
+        avg_time += std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+        if (notFirst) {
+            avg_time *= 0.5;
+        }
     }
     if (RECORD) {
         pclose(ffmpeg);
     }
     delete[] buffer;
+    std::cout << 1000/avg_time << " fps average";
+    if (RUNAT20FPS) {
+        std::cout << " pre-normalization";
+    }
+    std::cout << std::endl;
     glfwDestroyWindow(window);
 }
