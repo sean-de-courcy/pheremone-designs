@@ -18,16 +18,19 @@ void main() {
     // imageStore(img_output, pixel_coords, pixel)
 
     float VEL = 2.0;
-    float DIST = 20.0;
+    float DIST = 15.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
-    float STEERING = 0.8;
-    float RANDOMNESS = 1.0/75.0;
-    bool BOUNCE = false;
+    float STEERING = 1;
+    float RANDOMNESS = 1.0/100.0;
+    bool BOUNCE = true;
     int CHECKSIZE = 1;
     bool CONVERSION = true;
-    float THRESHOLD = 2;
+    float THRESHOLD = 4;
+    int TYPES = 3;
+    float LOVE = 1;
+    float FEAR = 1;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
@@ -126,6 +129,9 @@ void main() {
             forward.b += checkPixel.b;
         }
     }
+    for (int i = 0; i < 3; i += 1) {
+        forward[i] = forward[i]/pow(CHECKSIZE*2+1,2);
+    }
 
     float leftAngle = particleData.z - 0.125;
     leftAngle = leftAngle + 1*int(leftAngle < 0);
@@ -142,6 +148,9 @@ void main() {
             left.g += checkPixel.g;
             left.b += checkPixel.b;
         }
+    }
+    for (int i = 0; i < 3; i += 1) {
+        left[i] = left[i]/pow(CHECKSIZE*2+1,2);
     }
 
     float rightAngle = particleData.z + 0.125;
@@ -160,26 +169,26 @@ void main() {
             right.b += checkPixel.b;
         }
     }
-
-    if (particleData.w < 0.25) {
-        if ((left.r - left.g - left.b) > (forward.r - forward.g - forward.b) && (left.r - left.g - left.b) > (right.r - right.g - right.b)) {
-            particleData.z -= 0.125*STEERING;
-        } else if ((right.r - right.g - right.b) > (forward.r - forward.g - forward.b) && (right.r - right.g - right.b) > (left.r - left.g - left.b)) {
-            particleData.z += 0.125*STEERING;
-        }
-    } else if (particleData.w > 0.75) {
-        if ((left.g - left.r - left.b) > (forward.g - forward.r - forward.b) && (left.g - left.r - left.b) > (right.g - right.r - right.b)) {
-            particleData.z -= 0.125*STEERING;
-        } else if ((right.g - right.r - right.b) > (forward.g - forward.r - forward.b) && (right.g - right.r - right.b) > (left.g - left.r - left.b)) {
-            particleData.z += 0.125*STEERING;
-        }
-    } else {
-        if ((left.b - left.r - left.g) > (forward.b - forward.r - forward.g) && (left.b - left.r - left.g) > (right.b - right.r - right.g)) {
-            particleData.z -= 0.125*STEERING;
-        } else if ((right.b - right.r - right.g) > (forward.b - forward.r - forward.g) && (right.b - right.r - right.g) > (left.b - left.r - left.g)) {
-            particleData.z += 0.125*STEERING;
-        }
+    for (int i = 0; i < 3; i += 1) {
+        right[i] = right[i]/pow(CHECKSIZE*2+1,2);
     }
+
+    float direction = 0;
+    vec3 leftDark = vec3(1-left.r,1-left.g,1-left.b);
+    vec3 rightDark = vec3(1-right.r,1-right.g,1-right.b);
+    vec3 forwardDark = vec3(1-forward.r,1-forward.g,1-forward.b);
+    if (particleData.w < 0.25) {
+        direction = LOVE*right.r + FEAR*(left.g + left.b + leftDark.r)/TYPES - LOVE*left.r - FEAR*(right.g + right.b + rightDark.r)/TYPES;
+        direction += (LOVE*forward.r - FEAR*(forward.g + forward.b + forwardDark.r)/TYPES)*(1-2*int(direction > 0));
+    } else if (particleData.w > 0.75) {
+        direction = LOVE*right.g + FEAR*(left.r + left.b + leftDark.g)/TYPES - LOVE*left.g - FEAR*(right.r + right.b + rightDark.g)/TYPES;
+        direction += (LOVE*forward.g - FEAR*(forward.r + forward.b + forwardDark.g)/TYPES)*(1-2*int(direction > 0));
+    } else {
+        direction = LOVE*right.b + FEAR*(left.r + left.g + leftDark.b)/TYPES - LOVE*left.b - FEAR*(right.r + right.g + rightDark.b)/TYPES;
+        direction += (LOVE*forward.b - FEAR*(forward.r + forward.g + forwardDark.b)/TYPES)*(1-2*int(direction > 0));
+    }
+    direction = direction/(LOVE + FEAR);
+    particleData.z += 0.125*direction*STEERING;
     // Add noise to direction
     uint randHash = hash(uint(round(particleData.x*WIDTH) + round(particleData.y*HEIGHT)*WIDTH));
     float randComponent = (randHash/MAX)*2.0 - 1.0;

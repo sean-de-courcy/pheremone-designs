@@ -5,32 +5,41 @@ layout(rgba32f, binding = 0) uniform image2D img_input;
 layout(rgba32f, binding = 1) uniform image2D img_output;
 
 int blurWorkGroupSize = 2;
-//bool BOUNCE = false;
+int HEIGHT = 720;
+int WIDTH = 1280;
+bool BOUNCE = true;
 
 vec3 blur(ivec2 coords, float pixels[4*4*3]) {
     vec3 total = vec3(0.0, 0.0, 0.0);
     int numPixels = 0;
+    bool notRan = false;
     for (int i = 0; i <= 2; i += 1) {
         for (int j = 0; j <= 2; j += 1) {
-            int index = (coords.y+j)*4 + coords.x+i;
-            total.r += pixels[index*3    ];
-            total.g += pixels[index*3 + 1];
-            total.b += pixels[index*3 + 2];
-            numPixels += 1;
+            int globalx = int(gl_GlobalInvocationID.x*blurWorkGroupSize + coords.x) + (i-1);
+            int globaly = int(gl_GlobalInvocationID.y*blurWorkGroupSize + coords.y) + (j-1);
+            if (!(BOUNCE && (globalx < 0 || globaly < 0 || globalx > WIDTH || globaly > HEIGHT))) {
+                int index = (coords.y+j)*4 + coords.x+i;
+                total.r += pixels[index*3    ];
+                total.g += pixels[index*3 + 1];
+                total.b += pixels[index*3 + 2];
+                numPixels += 1;
+            } else {
+                notRan = true;
+            }
         }
     }
     float avgr = total.r / numPixels; 
-    avgr -= avgr*0.03 + 0.00007;
+    avgr -= avgr*0.05 + 0.00007;
     if (avgr < 0) {
         avgr = 0;
     }
     float avgg = total.g / numPixels; 
-    avgg -= avgg*0.03 + 0.00007;
+    avgg -= avgg*0.05 + 0.00007;
     if (avgg < 0) {
         avgg = 0;
     }
     float avgb = total.b / numPixels; 
-    avgb -= avgb*0.03 + 0.00007;
+    avgb -= avgb*0.05 + 0.00007;
     if (avgb < 0) {
         avgb = 0;
     }

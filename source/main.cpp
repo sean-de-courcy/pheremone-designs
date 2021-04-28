@@ -12,11 +12,11 @@
 #include <stdio.h>
 
 bool INWARD = false;
-bool BOXED = false;
-unsigned short int TYPES = 3; // max = 3
+bool BOXED = true;
+unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
 bool RECORD = false;
 bool RUNAT20FPS = false;
-int SQRT_NUMPIX = 1000;
+int SQRT_NUMPIX = 800;
 int WIDTH = 1280;
 int HEIGHT = 720;
 
