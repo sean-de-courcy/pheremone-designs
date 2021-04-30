@@ -7,7 +7,7 @@ layout(rgba32f, binding = 1) uniform image2D img_output;
 int blurWorkGroupSize = 2;
 int HEIGHT = 720;
 int WIDTH = 1280;
-bool BOUNCE = true;
+bool BOUNCE = false;
 
 vec3 blur(ivec2 coords, float pixels[4*4*3]) {
     vec3 total = vec3(0.0, 0.0, 0.0);
@@ -29,18 +29,18 @@ vec3 blur(ivec2 coords, float pixels[4*4*3]) {
         }
     }
     float avgr = total.r / numPixels; 
-    avgr -= avgr*0.05 + 0.00007;
-    if (avgr < 0) {
+    avgr -= avgr*0.1;
+    if (avgr < 0.0001) {
         avgr = 0;
     }
     float avgg = total.g / numPixels; 
-    avgg -= avgg*0.05 + 0.00007;
-    if (avgg < 0) {
+    avgg -= avgg*0.1;
+    if (avgg < 0.0001) {
         avgg = 0;
     }
     float avgb = total.b / numPixels; 
-    avgb -= avgb*0.05 + 0.00007;
-    if (avgb < 0) {
+    avgb -= avgb*0.1;
+    if (avgb < 0.0001) {
         avgb = 0;
     }
     return(vec3(avgr,avgg,avgb));
@@ -50,7 +50,7 @@ void main () {
     float pixelData[4*4*3];
     for (int i = -1; i < blurWorkGroupSize + 1; i += 1) {
         for (int j = -1; j < blurWorkGroupSize + 1; j += 1) {
-            vec4 pixelToAdd = imageLoad(img_input, ivec2(gl_GlobalInvocationID.x*blurWorkGroupSize + i, gl_GlobalInvocationID.y*blurWorkGroupSize + j));
+            vec4 pixelToAdd = imageLoad(img_input, ivec2(gl_GlobalInvocationID.x*blurWorkGroupSize + i + int(!BOUNCE)*(WIDTH*int(gl_GlobalInvocationID.x*blurWorkGroupSize + i < 0) - WIDTH*int(gl_GlobalInvocationID.x*blurWorkGroupSize + i > WIDTH)), gl_GlobalInvocationID.y*blurWorkGroupSize + j + int(!BOUNCE)*(HEIGHT*int(gl_GlobalInvocationID.y + j < 0) - HEIGHT*int(gl_GlobalInvocationID.y + j > HEIGHT))));
             pixelData[((j+1)*4 + i+1)*3    ] = pixelToAdd.r;
             pixelData[((j+1)*4 + i+1)*3 + 1] = pixelToAdd.g;
             pixelData[((j+1)*4 + i+1)*3 + 2] = pixelToAdd.b;

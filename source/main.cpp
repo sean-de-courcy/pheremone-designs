@@ -12,11 +12,11 @@
 #include <stdio.h>
 
 bool INWARD = false;
-bool BOXED = true;
+bool BOXED = false;
 unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
 bool RECORD = false;
 bool RUNAT20FPS = false;
-int SQRT_NUMPIX = 800;
+int SQRT_NUMPIX = 900;
 int WIDTH = 1280;
 int HEIGHT = 720;
 
@@ -251,7 +251,7 @@ int main() {
     int* buffer = new int[WIDTH*HEIGHT];
     if (RECORD) {
         cmd = "ffmpeg -r 10 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
-                            "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 26 -vf vflip output0.mp4";
+                            "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 24 -vf vflip output0.mp4";
         ffmpeg = popen(cmd, "w");
     }
 

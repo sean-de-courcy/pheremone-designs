@@ -18,19 +18,19 @@ void main() {
     // imageStore(img_output, pixel_coords, pixel)
 
     float VEL = 2.0;
-    float DIST = 15.0;
+    float DIST = 30.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
     float STEERING = 1;
     float RANDOMNESS = 1.0/100.0;
-    bool BOUNCE = true;
+    bool BOUNCE = false;
     int CHECKSIZE = 1;
     bool CONVERSION = true;
-    float THRESHOLD = 4;
+    float THRESHOLD = 5;
     int TYPES = 3;
-    float LOVE = 1;
-    float FEAR = 1;
+    float LOVE = 500;
+    float DISGUST = 500;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
@@ -59,8 +59,6 @@ void main() {
     }
 
     colorData = vec4(currentPixel.r + (1.0-currentPixel.r)*int(particleData.w < 0.25), currentPixel.g + (1.0-currentPixel.g)*int(particleData.w > 0.75), currentPixel.b + (1.0-currentPixel.b)*int(particleData.w > 0.25 && particleData.w < 0.75), 1.0);
-    //colorData.r += -1*(colorData.r - 1.0)*int(colorData.r > 1.0) + (-1*colorData.r)*int(colorData.r < 0);
-    //colorData.g += -1*(colorData.g - 1.0)*int(colorData.g > 1.0) + (-1*colorData.g)*int(colorData.g < 0);
     imageStore(img_output, ivec2(coords.x, coords.y), colorData);
 
     // Update position
@@ -123,14 +121,14 @@ void main() {
     vec3 forward = vec3(0.0, 0.0, 0.0);
     for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
         for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
-            checkPixel = imageLoad(img_output, ivec2(forwardCoords.x + i, forwardCoords.y + j));
+            checkPixel = imageLoad(img_output, ivec2(forwardCoords.x + i + int(!BOUNCE)*((WIDTH)*int(forwardCoords.x + i < 0) - (WIDTH)*int(forwardCoords.x + i > WIDTH)), forwardCoords.y + j + int(!BOUNCE)*((HEIGHT)*int(forwardCoords.y + j < 0) - (HEIGHT)*int(forwardCoords.y + j > HEIGHT))));
             forward.r += checkPixel.r;
             forward.g += checkPixel.g;
             forward.b += checkPixel.b;
         }
     }
     for (int i = 0; i < 3; i += 1) {
-        forward[i] = forward[i]/pow(CHECKSIZE*2+1,2);
+        forward[i] = forward[i]/(CHECKSIZE*2+1)/(CHECKSIZE*2+1);
     }
 
     float leftAngle = particleData.z - 0.125;
@@ -143,14 +141,14 @@ void main() {
     vec3 left = vec3(0.0, 0.0, 0.0);
     for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
         for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
-            checkPixel = imageLoad(img_output, ivec2(leftCoords.x + i, leftCoords.y + j));
+            checkPixel = imageLoad(img_output, ivec2(leftCoords.x + i + int(!BOUNCE)*((WIDTH)*int(forwardCoords.x + i < 0) - (WIDTH)*int(forwardCoords.x + i > WIDTH)), leftCoords.y + j + int(!BOUNCE)*((HEIGHT)*int(forwardCoords.y + j < 0) - (HEIGHT)*int(forwardCoords.y + j > HEIGHT))));
             left.r += checkPixel.r;
             left.g += checkPixel.g;
             left.b += checkPixel.b;
         }
     }
     for (int i = 0; i < 3; i += 1) {
-        left[i] = left[i]/pow(CHECKSIZE*2+1,2);
+        left[i] = left[i]/(CHECKSIZE*2+1)/(CHECKSIZE*2+1);
     }
 
     float rightAngle = particleData.z + 0.125;
@@ -163,31 +161,34 @@ void main() {
     vec3 right = vec3(0.0, 0.0, 0.0);
     for (int i = -1*CHECKSIZE; i <= CHECKSIZE; i += 1) {
         for (int j = -1*CHECKSIZE; j <= CHECKSIZE; j += 1) {
-            checkPixel = imageLoad(img_output, ivec2(rightCoords.x + i, rightCoords.y + j));
+            checkPixel = imageLoad(img_output, ivec2(rightCoords.x + i + int(!BOUNCE)*((WIDTH)*int(forwardCoords.x + i < 0) - (WIDTH)*int(forwardCoords.x + i > WIDTH)), rightCoords.y + j + int(!BOUNCE)*((HEIGHT)*int(forwardCoords.y + j < 0) - (HEIGHT)*int(forwardCoords.y + j > HEIGHT))));
             right.r += checkPixel.r;
             right.g += checkPixel.g;
             right.b += checkPixel.b;
         }
     }
     for (int i = 0; i < 3; i += 1) {
-        right[i] = right[i]/pow(CHECKSIZE*2+1,2);
+        right[i] = right[i]/(CHECKSIZE*2+1)/(CHECKSIZE*2+1);
     }
 
     float direction = 0;
-    vec3 leftDark = vec3(1-left.r,1-left.g,1-left.b);
-    vec3 rightDark = vec3(1-right.r,1-right.g,1-right.b);
-    vec3 forwardDark = vec3(1-forward.r,1-forward.g,1-forward.b);
     if (particleData.w < 0.25) {
-        direction = LOVE*right.r + FEAR*(left.g + left.b + leftDark.r)/TYPES - LOVE*left.r - FEAR*(right.g + right.b + rightDark.r)/TYPES;
-        direction += (LOVE*forward.r - FEAR*(forward.g + forward.b + forwardDark.r)/TYPES)*(1-2*int(direction > 0));
+        direction = LOVE*right.r + DISGUST*(left.g + left.b) - LOVE*left.r - DISGUST*(right.g + right.b);
+        if (abs(direction) > 0.000001) {
+            direction += (LOVE*forward.r - DISGUST*(forward.g + forward.b))/(0 - direction);
+        }
     } else if (particleData.w > 0.75) {
-        direction = LOVE*right.g + FEAR*(left.r + left.b + leftDark.g)/TYPES - LOVE*left.g - FEAR*(right.r + right.b + rightDark.g)/TYPES;
-        direction += (LOVE*forward.g - FEAR*(forward.r + forward.b + forwardDark.g)/TYPES)*(1-2*int(direction > 0));
+        direction = LOVE*right.g + DISGUST*(left.r + left.b) - LOVE*left.g - DISGUST*(right.r + right.b);
+        if (abs(direction) > 0.000001) {
+            direction += (LOVE*forward.g - DISGUST*(forward.r + forward.b))/(0 - direction);
+        }
     } else {
-        direction = LOVE*right.b + FEAR*(left.r + left.g + leftDark.b)/TYPES - LOVE*left.b - FEAR*(right.r + right.g + rightDark.b)/TYPES;
-        direction += (LOVE*forward.b - FEAR*(forward.r + forward.g + forwardDark.b)/TYPES)*(1-2*int(direction > 0));
+        direction = LOVE*right.b + DISGUST*(left.r + left.g) - LOVE*left.b - DISGUST*(right.r + right.g);
+        if (abs(direction) > 0.000001) {
+            direction += (LOVE*forward.b - DISGUST*(forward.g + forward.r))/(0 - direction);
+        }
     }
-    direction = direction/(LOVE + FEAR);
+    direction = direction/(LOVE + DISGUST*(TYPES - 1));
     particleData.z += 0.125*direction*STEERING;
     // Add noise to direction
     uint randHash = hash(uint(round(particleData.x*WIDTH) + round(particleData.y*HEIGHT)*WIDTH));
