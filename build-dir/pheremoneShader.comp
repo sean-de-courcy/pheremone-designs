@@ -14,23 +14,22 @@ layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(rgba32f, binding = 2) uniform image2D particle_img;
 void main() {
-    // imageLoad(img, coords) --> vec4 representing pixel rgba
-    // imageStore(img_output, pixel_coords, pixel)
 
     float VEL = 2.0;
-    float DIST = 30.0;
+    float DIST = 20.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float MAX = 4294967295.0;
-    float STEERING = 1;
-    float RANDOMNESS = 1.0/100.0;
+    float STEERING = 0.8;
+    float RANDOMNESS = 1.0/50.0;
     bool BOUNCE = false;
     int CHECKSIZE = 1;
-    bool CONVERSION = true;
-    float THRESHOLD = 5;
-    int TYPES = 3;
-    float LOVE = 500;
+    bool CONVERSION = false;
+    float THRESHOLD = 3.5;
+    int TYPES = 1;
+    float LOVE = 1500;
     float DISGUST = 500;
+    bool GRADUAL = true;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
@@ -173,23 +172,57 @@ void main() {
 
     float direction = 0;
     if (particleData.w < 0.25) {
-        direction = LOVE*right.r + DISGUST*(left.g + left.b) - LOVE*left.r - DISGUST*(right.g + right.b);
-        if (abs(direction) > 0.000001) {
-            direction += (LOVE*forward.r - DISGUST*(forward.g + forward.b))/(0 - direction);
+        if (GRADUAL) {
+            direction = LOVE*right.r + DISGUST*(left.g + left.b) - LOVE*left.r - DISGUST*(right.g + right.b);
+            if (abs(direction) > 0.000001) {
+                direction += (LOVE*forward.r - DISGUST*(forward.g + forward.b))/(0 - direction);
+            }
+        } else {
+            if (forward.r - forward.g - forward.b < left.r - left.g - left.b && forward.r - forward.g - forward.b < right.r - right.g - right.b) {
+                if (left.r - left.g - left.b > right.r - right.g - right.b) {
+                    direction = -0.125;
+                } else if (right.r - right.g - right.b > left.r - left.g - left.b) {
+                    direction = 0.125;
+                }             
+            }
         }
     } else if (particleData.w > 0.75) {
-        direction = LOVE*right.g + DISGUST*(left.r + left.b) - LOVE*left.g - DISGUST*(right.r + right.b);
-        if (abs(direction) > 0.000001) {
-            direction += (LOVE*forward.g - DISGUST*(forward.r + forward.b))/(0 - direction);
+        if (GRADUAL) {
+            direction = LOVE*right.g + DISGUST*(left.r + left.b) - LOVE*left.g - DISGUST*(right.r + right.b);
+            if (abs(direction) > 0.000001) {
+                direction += (LOVE*forward.g - DISGUST*(forward.r + forward.b))/(0 - direction);
+            }
+        } else {
+            if (forward.g - forward.r - forward.b < left.g - left.r - left.b && forward.g - forward.r - forward.b < right.g - right.r - right.b) {
+                if (left.g - left.r - left.b > right.g - right.r - right.b) {
+                    direction = -0.125;
+                } else if (right.g - right.r - right.b > left.g - left.r - left.b) {
+                    direction = 0.125;
+                }             
+            }
         }
     } else {
-        direction = LOVE*right.b + DISGUST*(left.r + left.g) - LOVE*left.b - DISGUST*(right.r + right.g);
-        if (abs(direction) > 0.000001) {
-            direction += (LOVE*forward.b - DISGUST*(forward.g + forward.r))/(0 - direction);
+        if (GRADUAL) {
+            direction = LOVE*right.b + DISGUST*(left.r + left.g) - LOVE*left.b - DISGUST*(right.r + right.g);
+            if (abs(direction) > 0.000001) {
+                direction += (LOVE*forward.b - DISGUST*(forward.g + forward.r))/(0 - direction);
+            }
+        } else {
+            if (forward.b - forward.g - forward.r < left.b - left.g - left.r && forward.b - forward.g - forward.r < right.b - right.g - right.r) {
+                if (left.b - left.g - left.r > right.b - right.g - right.r) {
+                    direction = -0.125;
+                } else if (right.b - right.g - right.r > left.b - left.g - left.r) {
+                    direction = 0.125;
+                }             
+            }
         }
     }
-    direction = direction/(LOVE + DISGUST*(TYPES - 1));
-    particleData.z += 0.125*direction*STEERING;
+    if (GRADUAL) {
+        direction = direction/(LOVE + DISGUST*(TYPES - 1));
+        particleData.z += 0.125*direction*STEERING;
+    } else {
+        particleData.z += direction*STEERING;
+    }
     // Add noise to direction
     uint randHash = hash(uint(round(particleData.x*WIDTH) + round(particleData.y*HEIGHT)*WIDTH));
     float randComponent = (randHash/MAX)*2.0 - 1.0;

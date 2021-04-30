@@ -13,7 +13,7 @@
 
 bool INWARD = false;
 bool BOXED = false;
-unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
+unsigned short int TYPES = 1; // max = 3 // Don't forget to change it in the shader!
 bool RECORD = false;
 bool RUNAT20FPS = false;
 int SQRT_NUMPIX = 900;
