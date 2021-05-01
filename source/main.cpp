@@ -13,10 +13,10 @@
 
 bool INWARD = false;
 bool BOXED = false;
-unsigned short int TYPES = 1; // max = 3 // Don't forget to change it in the shader!
+unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
 bool RECORD = false;
-bool RUNAT20FPS = false;
-int SQRT_NUMPIX = 900;
+bool RUNAT20FPS = true;
+int SQRT_NUMPIX = 800;
 int WIDTH = 1280;
 int HEIGHT = 720;
 
@@ -250,7 +250,7 @@ int main() {
     FILE* ffmpeg;
     int* buffer = new int[WIDTH*HEIGHT];
     if (RECORD) {
-        cmd = "ffmpeg -r 10 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
+        cmd = "ffmpeg -r 20 -f rawvideo -pix_fmt rgba -s 1280x720 -i - "
                             "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 24 -vf vflip output0.mp4";
         ffmpeg = popen(cmd, "w");
     }
@@ -297,7 +297,7 @@ int main() {
         glfwSwapBuffers(window);
 
         // Making Video
-        if (RECORD && i == 1) {
+        if (RECORD ){//&& i == 1) {
             glReadPixels(0,0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
             fwrite(buffer, sizeof(int)*WIDTH*HEIGHT, 1, ffmpeg);

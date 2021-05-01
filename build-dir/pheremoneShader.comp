@@ -1,5 +1,6 @@
 #version 430
 
+float MAX = 4294967295.0;
 uint hash(uint state) {
     state ^= 2747636419u;
     state *= 2654435769u;
@@ -15,20 +16,19 @@ layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(rgba32f, binding = 2) uniform image2D particle_img;
 void main() {
 
-    float VEL = 2.0;
+    float VEL = 3.0;
     float DIST = 20.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
-    float MAX = 4294967295.0;
-    float STEERING = 0.8;
+    float STEERING = 1;
     float RANDOMNESS = 1.0/50.0;
     bool BOUNCE = false;
     int CHECKSIZE = 1;
     bool CONVERSION = false;
     float THRESHOLD = 3.5;
-    int TYPES = 1;
-    float LOVE = 1500;
-    float DISGUST = 500;
+    int TYPES = 3;
+    float LOVE = 20/4*2;
+    float DISGUST = 20/4; // LOVE + DISGUST*(TYPES - 1) = [large number] && DISGUST = [large number]/(TYPES+1)
     bool GRADUAL = true;
 
     // Load
