@@ -17,7 +17,7 @@ layout(rgba32f, binding = 2) uniform image2D particle_img;
 void main() {
 
     float VEL = 3.0;
-    float DIST = 20.0;
+    float DIST = 30.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
     float STEERING = 1;
@@ -27,8 +27,8 @@ void main() {
     bool CONVERSION = false;
     float THRESHOLD = 3.5;
     int TYPES = 3;
-    float LOVE = 20/4*2;
-    float DISGUST = 20/4; // LOVE + DISGUST*(TYPES - 1) = [large number] && DISGUST = [large number]/(TYPES+1)
+    float LOVE = 200;
+    float DISGUST = 150/2; // LOVE + DISGUST*(TYPES - 1) = [large number] && DISGUST = [large number]/(TYPES+1)
     bool GRADUAL = true;
 
     // Load
