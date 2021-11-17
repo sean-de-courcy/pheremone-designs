@@ -29,17 +29,20 @@ vec3 blur(ivec2 coords, float pixels[4*4*3]) {
         }
     }
     float avgr = total.r / numPixels; 
-    avgr -= avgr*0.1;
+    //avgr -= avgr*0.1;
+    avgr = (avgr > 0.75 ? avgr - 0.6*(1 - avgr) - 0.00005 : avgr - 0.1*avgr);
     if (avgr < 0.0001) {
         avgr = 0;
     }
     float avgg = total.g / numPixels; 
-    avgg -= avgg*0.1;
+    //avgg -= avgg*0.1;
+    avgg = (avgg > 0.75 ? avgg - 0.6*(1 - avgg) - 0.00005 : avgg - 0.1*avgg);
     if (avgg < 0.0001) {
         avgg = 0;
     }
     float avgb = total.b / numPixels; 
-    avgb -= avgb*0.1;
+    //avgb -= avgb*0.1;
+    avgb = (avgb > 0.75 ? avgb - 0.6*(1 - avgb) - 0.00005 : avgb - 0.1*avgb);
     if (avgb < 0.0001) {
         avgb = 0;
     }

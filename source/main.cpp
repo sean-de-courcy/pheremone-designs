@@ -10,7 +10,10 @@
 #include <streambuf>
 #include <sstream>
 #include <stdio.h>
+#include <regex>
 
+
+// Defining Defaults //
 bool INWARD = false;
 bool BOXED = false;
 unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
@@ -20,15 +23,66 @@ int SQRT_NUMPIX = 800;
 int WIDTH = 1280;
 int HEIGHT = 720;
 
+float VEL = 3.0;
+float DIST = 30.0;
+float STEERING = 0.85;
+float RANDOMNESS = 1.0/50.0;
+bool BOUNCE = false;
+int CHECKSIZE = 1;
+bool CONVERSION = false;
+float THRESHOLD = 3.5;
+float LOVE = 5;
+float DISGUST = 5/2.0; // #Note: LOVE + DISGUST*(TYPES - 1) = [number] seems to work well
+bool GRADUAL = true;
+
+// The Main Program //
 int main() {
     srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
+    Image configuration(3, 1);
+    configuration.SetColor(Color(float(TYPES), VEL, DIST, STEERING), 1, 1);
+    configuration.SetColor(Color(RANDOMNESS, float(CHECKSIZE), float(CONVERSION), THRESHOLD), 2, 1);
+    configuration.SetColor(Color(float(GRADUAL), LOVE, DISGUST), 3, 1);
+    
+    std::string response;
+    do {
+    std::cout << "Use defaults? (y or n)\n";
+    std::cin >> response;
+    } while (response != "y" && response != "n");
+    if (response == "n") {
+        do {
+        std::cout << "INWARD? (y or n)\n";
+            std::cin >> response;
+            INWARD = response == "y";
+        } while (response != "y" && response != "n");
+        do {
+            std::cout << "BOXED? (y or n)\n";
+            std::cin >> response;
+            BOXED = response == "y";
+        } while (response != "y" && response != "n");
+        do {
+            std::cout << "TYPES? (1, 2, or 3)";
+            std::cin >> response;
+            TYPES = std::stoi(response);
+        } while (response != "3" && response != "2" && response != "3");
+        do {
+            std::cout << "RECORD? (y or n)";
+            std::cin >> response;
+            RECORD = response == "y";
+        } while (response != "y" && response != "n");
+        do {
+            std::cout << "RUNAT20FPS? (y or n)";
+            std::cin >> response;
+            RUNAT20FPS = response == "y";
+        } while (response != "y" && response != "n");
+        // Do the rest of them!! Don't forget!
 
-    Image image(WIDTH, HEIGHT);
+        Image image(WIDTH, HEIGHT);
 
-    for (int x = 0; x < WIDTH; x++) {
-        for (int y = 0; y < HEIGHT; y++) {
-            image.SetColor(Color(0,0,0,1), x, y);
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                image.SetColor(Color(0,0,0,1), x, y);
+            }
         }
     }
 
@@ -306,15 +360,10 @@ int main() {
         glDispatchCompute((GLuint)image.getWidth()/blurWorkGroupSize, (GLuint)image.getHeight()/blurWorkGroupSize, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         f++;
-        f *= (int)(RECORD);
         auto end = std::chrono::steady_clock::now();
         float diff = 50 - std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
         sleep(diff/1000*int(diff > 0 && RUNAT20FPS));
-        bool notFirst = !(avg_time < 0.1);
-        avg_time += std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-        if (notFirst) {
-            avg_time *= 0.5;
-        }
+        avg_time = (avg_time*(f-1) + std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count())/(float)f;
     }
     if (RECORD) {
         pclose(ffmpeg);

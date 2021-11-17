@@ -20,15 +20,15 @@ void main() {
     float DIST = 30.0;
     int HEIGHT = 720;
     int WIDTH = 1280;
-    float STEERING = 1;
+    float STEERING = 0.85;
     float RANDOMNESS = 1.0/50.0;
     bool BOUNCE = false;
     int CHECKSIZE = 1;
     bool CONVERSION = false;
     float THRESHOLD = 3.5;
     int TYPES = 3;
-    float LOVE = 200;
-    float DISGUST = 150/2; // LOVE + DISGUST*(TYPES - 1) = [large number] && DISGUST = [large number]/(TYPES+1)
+    float LOVE = 5;
+    float DISGUST = 5/2.0; // LOVE + DISGUST*(TYPES - 1) = [number] && DISGUST = [large number]/(TYPES+1)
     bool GRADUAL = true;
 
     // Load
