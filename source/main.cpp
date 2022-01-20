@@ -16,35 +16,32 @@
 // Defining Defaults //
 bool INWARD = false;
 bool BOXED = false;
-unsigned short int TYPES = 3; // max = 3 // Don't forget to change it in the shader!
+unsigned short int TYPES = 3; // max = 3
 bool RECORD = false;
 bool RUNAT20FPS = true;
-int SQRT_NUMPIX = 800;
-int WIDTH = 1280;
-int HEIGHT = 720;
+int SQRT_NUMPIX = 650;
+int WIDTH = 1280; // max = 2560 // For now don't change these
+int HEIGHT = 720; // max = 1440
 
-float VEL = 3.0;
-float DIST = 30.0;
-float STEERING = 0.85;
-float RANDOMNESS = 1.0/50.0;
+float VEL = 3.0; // max = 10.0
+float DIST = 30.0; // max = 100.0
+float STEERING = 0.85; // max = 1.0
+float RANDOMNESS = 1.0/50.0; // max = 1.0
 bool BOUNCE = false;
-int CHECKSIZE = 1;
+int CHECKSIZE = 1; // max = 3
 bool CONVERSION = false;
-float THRESHOLD = 3.5;
-float LOVE = 5;
-float DISGUST = 5/2.0; // #Note: LOVE + DISGUST*(TYPES - 1) = [number] seems to work well
+float THRESHOLD = 3.5; // max = 10.0
+float LOVE = 5; // max = 100.0
+float DISGUST = 5/2.0; // max = 100.0 // #Note: LOVE + DISGUST*(TYPES - 1) = [number] seems to work well
 bool GRADUAL = true;
 
 // The Main Program //
 int main() {
     srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-
-    Image configuration(3, 1);
-    configuration.SetColor(Color(float(TYPES), VEL, DIST, STEERING), 1, 1);
-    configuration.SetColor(Color(RANDOMNESS, float(CHECKSIZE), float(CONVERSION), THRESHOLD), 2, 1);
-    configuration.SetColor(Color(float(GRADUAL), LOVE, DISGUST), 3, 1);
     
+    bool error = false;
     std::string response;
+
     do {
     std::cout << "Use defaults? (y or n)\n";
     std::cin >> response;
@@ -61,30 +58,78 @@ int main() {
             BOXED = response == "y";
         } while (response != "y" && response != "n");
         do {
-            std::cout << "TYPES? (1, 2, or 3)";
+            std::cout << "TYPES? (1, 2, or 3)\n";
             std::cin >> response;
             TYPES = std::stoi(response);
         } while (response != "3" && response != "2" && response != "3");
         do {
-            std::cout << "RECORD? (y or n)";
+            std::cout << "RECORD? (y or n)\n";
             std::cin >> response;
             RECORD = response == "y";
         } while (response != "y" && response != "n");
         do {
-            std::cout << "RUNAT20FPS? (y or n)";
+            std::cout << "RUNAT20FPS? (y or n)\n";
             std::cin >> response;
             RUNAT20FPS = response == "y";
         } while (response != "y" && response != "n");
-        // Do the rest of them!! Don't forget!
-
-        Image image(WIDTH, HEIGHT);
-
-        for (int x = 0; x < WIDTH; x++) {
-            for (int y = 0; y < HEIGHT; y++) {
-                image.SetColor(Color(0,0,0,1), x, y);
+        do {
+            std::cout << "Please input desired number of particles: \n(number, will be rounded to nearest perfect square) [640000]\n";
+            std::cin >> response;
+            error = false;
+            try
+            {
+                SQRT_NUMPIX = int(sqrt(std::stof(response)));
             }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+                error = true;
+            }
+        } while (error);
+        do {
+            std::cout << "Please input the desired window width: (integer) [1280]\n";
+            std::cin >> response;
+            error = false;
+            try
+            {
+                WIDTH = std::stoi(response);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+                error = true;
+            }
+            
+        } while (error);
+        do {
+            std::cout << "Please input the desired window height: (integer) [720]\n";
+            std::cin >> response;
+            error = false;
+            try
+            {
+                HEIGHT = std::stoi(response);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+                error = true;
+            }
+        } while (error);
+    }
+
+    Image image(WIDTH, HEIGHT);
+
+    for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            image.SetColor(Color(0,0,0,1), x, y);
         }
     }
+
+    Image configuration(2, 2);
+    configuration.SetColor(Color(float(TYPES)/3.0, VEL/10.0, DIST/100.0, STEERING), 0, 0);
+    configuration.SetColor(Color(RANDOMNESS, float(CHECKSIZE)/3.0, float(CONVERSION), THRESHOLD/10.0), 0, 1);
+    configuration.SetColor(Color(float(GRADUAL), LOVE/100.0, DISGUST/100.0), 1, 0);
+    configuration.SetColor(Color(float(WIDTH)/2560.0, float(HEIGHT)/1440.0, float(BOUNCE), 0), 1, 1);
 
     Image particleImage(SQRT_NUMPIX, SQRT_NUMPIX);
 
@@ -128,6 +173,8 @@ int main() {
             particleImage.SetColor(Color(posX/WIDTH, posY/HEIGHT, angle, color), x, y);
         }
     }
+
+    std::cout << "created pixel image\n";
 
     GLFWwindow* window;
     if(!glfwInit()) {
@@ -184,6 +231,20 @@ int main() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, particleImage.getWidth(), particleImage.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, particleImageChar);
     glBindImageTexture(2, tex_handler3, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     delete[] particleImageChar;
+
+    unsigned char* settingsChar = configuration.toChar();
+    GLuint tex_handler4;
+    glGenTextures(1, &tex_handler4);
+    glBindTexture(GL_TEXTURE_2D, tex_handler4);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, configuration.getWidth(), configuration.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, settingsChar);
+    glBindImageTexture(3, tex_handler4, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    delete[] settingsChar;
 
     std::ifstream t1("pheremoneShader.comp");
     std::stringstream buffer1;

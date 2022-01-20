@@ -6,14 +6,6 @@
 
 #IncludeRegexTransform: 
 
-../libraries/glad/include/KHR/khrplatform.h
-stdint.h
--
-inttypes.h
--
-stdint.h
--
-
 /home/sean/Desktop/C++ Programs/PheremoneDesigns/source/Image.h
 vector
 -
@@ -48,5 +40,13 @@ sstream
 stdio.h
 -
 regex
+-
+
+libraries/glad/include/KHR/khrplatform.h
+stdint.h
+-
+inttypes.h
+-
+stdint.h
 -
 

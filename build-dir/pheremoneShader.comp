@@ -14,22 +14,28 @@ uint hash(uint state) {
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(rgba32f, binding = 2) uniform image2D particle_img;
+layout(rgba32f, binding = 3) uniform image2D configuration;
 void main() {
 
-    float VEL = 3.0;
-    float DIST = 30.0;
+    vec4 configuration_11 = imageLoad(configuration, ivec2(0,0));
+    vec4 configuration_12 = imageLoad(configuration, ivec2(0,1));
+    vec4 configuration_21 = imageLoad(configuration, ivec2(1,0));
+    vec4 configuration_22 = imageLoad(configuration, ivec2(1,1));
+
+    float VEL = configuration_11.g * 10;
+    float DIST = configuration_11.b * 100;
     int HEIGHT = 720;
     int WIDTH = 1280;
-    float STEERING = 0.85;
-    float RANDOMNESS = 1.0/50.0;
-    bool BOUNCE = false;
-    int CHECKSIZE = 1;
-    bool CONVERSION = false;
-    float THRESHOLD = 3.5;
-    int TYPES = 3;
-    float LOVE = 5;
-    float DISGUST = 5/2.0; // LOVE + DISGUST*(TYPES - 1) = [number] && DISGUST = [large number]/(TYPES+1)
-    bool GRADUAL = true;
+    float STEERING = configuration_11.a;
+    float RANDOMNESS = configuration_12.r;
+    bool BOUNCE = configuration_22.b > 0.5;
+    int CHECKSIZE = int(round(configuration_12.g * 3));
+    bool CONVERSION = configuration_12.b > 0.5;
+    float THRESHOLD = configuration_12.a * 10;
+    int TYPES = int(round(configuration_11.r * 3));
+    float LOVE = configuration_21.g * 100;
+    float DISGUST = configuration_21.b * 100;
+    bool GRADUAL = configuration_21.r > 0.5;
 
     // Load
     vec4 particleData = imageLoad(particle_img, ivec2(gl_GlobalInvocationID.xy));
