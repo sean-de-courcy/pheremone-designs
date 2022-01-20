@@ -1,4 +1,0 @@
-/home/sean/Desktop/C++ Programs/PheremoneDesigns/CMakeFiles/rebuild_cache.dir
-/home/sean/Desktop/C++ Programs/PheremoneDesigns/CMakeFiles/edit_cache.dir
-/home/sean/Desktop/C++ Programs/PheremoneDesigns/CMakeFiles/glad.dir
-/home/sean/Desktop/C++ Programs/PheremoneDesigns/CMakeFiles/PheremoneDesigns.dir
