@@ -3,11 +3,14 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img_input;
 layout(rgba32f, binding = 1) uniform image2D img_output;
+layout(rgba32f, binding = 3) uniform image2D configuration;
+
+vec4 configuration_22 = imageLoad(configuration, ivec2(1,1));
 
 int blurWorkGroupSize = 2;
 int HEIGHT = 720;
 int WIDTH = 1280;
-bool BOUNCE = false;
+bool BOUNCE = configuration_22.b > 0.5;
 
 vec3 blur(ivec2 coords, float pixels[4*4*3]) {
     vec3 total = vec3(0.0, 0.0, 0.0);
@@ -29,19 +32,19 @@ vec3 blur(ivec2 coords, float pixels[4*4*3]) {
         }
     }
     float avgr = total.r / numPixels; 
-    //avgr -= avgr*0.1;
+    // avgr -= 0.05;
     avgr = (avgr > 0.75 ? avgr - 0.6*(1 - avgr) - 0.00005 : avgr - 0.1*avgr);
     if (avgr < 0.0001) {
-        avgr = 0;
+       avgr = 0;
     }
     float avgg = total.g / numPixels; 
-    //avgg -= avgg*0.1;
+    // avgg -= 0.05;
     avgg = (avgg > 0.75 ? avgg - 0.6*(1 - avgg) - 0.00005 : avgg - 0.1*avgg);
     if (avgg < 0.0001) {
         avgg = 0;
     }
     float avgb = total.b / numPixels; 
-    //avgb -= avgb*0.1;
+    // avgb -= 0.05;
     avgb = (avgb > 0.75 ? avgb - 0.6*(1 - avgb) - 0.00005 : avgb - 0.1*avgb);
     if (avgb < 0.0001) {
         avgb = 0;

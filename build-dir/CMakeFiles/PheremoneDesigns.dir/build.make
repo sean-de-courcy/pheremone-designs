@@ -80,21 +80,6 @@ PheremoneDesigns_EXTERNAL_OBJECTS =
 PheremoneDesigns: CMakeFiles/PheremoneDesigns.dir/source/main.cpp.o
 PheremoneDesigns: CMakeFiles/PheremoneDesigns.dir/build.make
 PheremoneDesigns: libglad.a
-PheremoneDesigns: /usr/local/lib/libopencv_gapi.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_highgui.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_ml.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_objdetect.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_photo.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_stitching.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_video.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_videoio.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_dnn.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_imgcodecs.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_calib3d.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_features2d.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_flann.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_imgproc.so.4.5.2
-PheremoneDesigns: /usr/local/lib/libopencv_core.so.4.5.2
 PheremoneDesigns: CMakeFiles/PheremoneDesigns.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/home/sean/Desktop/C++ Programs/PheremoneDesigns/build-dir/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable PheremoneDesigns"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/PheremoneDesigns.dir/link.txt --verbose=$(VERBOSE)
